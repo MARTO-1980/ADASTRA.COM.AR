@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fases Lunares</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Fondo de estrellas */
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            width: 100%;
+            height: 100%;
+        }
+
+        h1, h2 {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin: 20px 0;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+
+        #currentDate, #currentMoon, #selectedMoon {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        #currentMoon .moon-emoji, #selectedMoon .moon-emoji {
+            font-size: 5em; /* Luna más grande */
+            display: block;
+            margin: 10px auto;
+        }
+
+        #dateInputContainer {
+            background: #d3d3d3;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px; /* Separación de 5 cm */
+            margin-bottom: 20px;
+            color: black;
+        }
+
+        #dateInput {
+            font-size: 1.2em;
+            padding: 10px;
+            width: 150px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .character {
+            position: fixed;
+            font-size: 10em; /* 10 veces el tamaño normal */
+            animation: fadeOut 7s forwards;
+            z-index: 10;
+        }
+
+        .character-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .character-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas>
+    <h1>FASES LUNARES</h1>
+    <div id="currentDate"></div>
+    <div id="currentMoon"></div>
+    <div id="dateInputContainer">
+        <h2>INGRESAR FECHA (DD-MM-AAAA)</h2>
+        <input type="text" id="dateInput" placeholder="DD-MM-AAAA" maxlength="10">
+        <div id="selectedMoon"></div>
+    </div>
+
+    <audio id="wolfHowl" src="file:///H:/1980 - PROGRAMMER/PROYECTO AD ASTRA PER ASTRA/lobo.mp3"></audio>
+    <audio id="witchLaugh" src="file:///H:/1980 - PROGRAMMER/PROYECTO AD ASTRA PER ASTRA/bruja.mp3"></audio>
+
+    <script>
+        // Estrellas parpadeantes
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const stars = [];
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2,
+                opacity: Math.random(),
+                speed: Math.random() * 0.02 + 0.01
+            });
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                star.opacity += star.speed;
+                if (star.opacity > 1 || star.opacity < 0) star.speed = -star.speed;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        // Formatear fecha
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Cálculo de la fase lunar
+        function getMoonPhase(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const day = date.getDate();
+
+            const knownNewMoon = new Date(1970, 0, 7).getTime();
+            const synodicMonth = 29.53058867 * 24 * 60 * 60 * 1000;
+            const diff = date.getTime() - knownNewMoon;
+            const phase = (diff / synodicMonth) % 1;
+
+            let moonEmoji, moonName;
+            if (phase < 0.05 || phase >= 0.95) {
+                moonEmoji = '🌑';
+                moonName = 'Luna Nueva';
+            } else if (phase < 0.25) {
+                moonEmoji = '🌒';
+                moonName = 'Creciente';
+            } else if (phase < 0.3) {
+                moonEmoji = '🌓';
+                moonName = 'Cuarto Creciente';
+            } else if (phase < 0.45) {
+                moonEmoji = '🌔';
+                moonName = 'Gibosa Creciente';
+            } else if (phase < 0.55) {
+                moonEmoji = '🌕';
+                moonName = 'Luna Llena';
+            } else if (phase < 0.7) {
+                moonEmoji = '🌖';
+                moonName = 'Gibosa Menguante';
+            } else if (phase < 0.8) {
+                moonEmoji = '🌗';
+                moonName = 'Cuarto Menguante';
+            } else {
+                moonEmoji = '🌘';
+                moonName = 'Menguante';
+            }
+
+            return { emoji: moonEmoji, name: moonName };
+        }
+
+        // Mostrar fecha y fase lunar actual
+        function displayCurrentMoon() {
+            const today = new Date();
+            document.getElementById('currentDate').innerHTML = `Fecha actual: ${formatDate(today)}`;
+            const phase = getMoonPhase(today);
+            document.getElementById('currentMoon').innerHTML = `<span class="moon-emoji">${phase.emoji}</span>Hoy es ${phase.name}`;
+            if (phase.name === 'Luna Llena') showWolves();
+            if (formatDate(today) === '19-12-2025') showWitches();
+        }
+        displayCurrentMoon();
+
+        // Formato automático de fecha
+        document.getElementById('dateInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) value = value.slice(0, 2) + '-' + value.slice(2);
+            if (value.length > 5) value = value.slice(0, 5) + '-' + value.slice(5, 9);
+            e.target.value = value;
+        });
+
+        // Mostrar fase lunar para fecha ingresada
+        document.getElementById('dateInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = e.target.value;
+                const regex = /^(\d{2})-(\d{2})-(\d{4})$/;
+                if (regex.test(input)) {
+                    const [day, month, year] = input.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+                    if (!isNaN(date.getTime())) {
+                        const phase = getMoonPhase(date);
+                        document.getElementById('selectedMoon').innerHTML = `<span class="moon-emoji">${phase.emoji}</span>El ${input} será ${phase.name}`;
+                        if (phase.name === 'Luna Llena') showWolves();
+                        if (input === '19-12-2025') showWitches();
+                    } else {
+                        document.getElementById('selectedMoon').innerHTML = 'Fecha inválida';
+                    }
+                } else {
+                    document.getElementById('selectedMoon').innerHTML = 'Formato inválido';
+                }
+            }
+        });
+
+        // Mostrar lobos y reproducir sonido
+        function showWolves() {
+            const wolfLeft = document.createElement('div');
+            wolfLeft.className = 'character character-left';
+            wolfLeft.innerHTML = '🐺';
+            document.body.appendChild(wolfLeft);
+
+            const wolfRight = document.createElement('div');
+            wolfRight.className = 'character character-right';
+            wolfRight.innerHTML = '🐺';
+            document.body.appendChild(wolfRight);
+
+            const audio = document.getElementById('wolfHowl');
+            audio.play();
+
+            setTimeout(() => {
+                wolfLeft.remove();
+                wolfRight.remove();
+            }, 7000);
+        }
+
+        // Mostrar brujas y reproducir sonido
+        function showWitches() {
+            const witchLeft = document.createElement('div');
+            witchLeft.className = 'character character-left';
+            witchLeft.innerHTML = '🧙‍♀️';
+            document.body.appendChild(witchLeft);
+
+            const witchRight = document.createElement('div');
+            witchRight.className = 'character character-right';
+            witchRight.innerHTML = '🧙‍♀️';
+            document.body.appendChild(witchRight);
+
+            const audio = document.getElementById('witchLaugh');
+            audio.play();
+
+            setTimeout(() => {
+                witchLeft.remove();
+                witchRight.remove();
+            }, 7000);
+        }
+    </script>
+</body>
+</html>
