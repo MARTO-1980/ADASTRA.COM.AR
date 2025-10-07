@@ -100,9 +100,81 @@
             0% { opacity: 1; }
             100% { opacity: 0; }
         }
+        /* Menú lateral */
+        #menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 260px;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(6px);
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.6);
+            transform: translateX(-100%);
+            transition: transform 250ms ease;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        #menu.open {
+            transform: translateX(0);
+        }
+
+        #menu a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 8px;
+            border-radius: 6px;
+        }
+
+        #menu a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #menuToggle {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 1100;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        #menuOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 250ms ease;
+            z-index: 900;
+        }
+
+        #menuOverlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #perfil {
+            scroll-margin-top: 80px;
+            padding: 60px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
+    <button id="menuToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav id="menu" aria-hidden="true">
+        <a id="profileLink" href="#perfil">Mi perfil</a>
+    </nav>
+    <div id="menuOverlay"></div>
     <canvas id="stars"></canvas>
     <h1>FASES LUNARES</h1>
     <div id="currentDate"></div>
@@ -115,6 +187,11 @@
 
     <audio id="wolfHowl" src="audios/lobo.mp3"></audio>
     <audio id="witchLaugh" src="audios/bruja.mp3"></audio>
+
+    <section id="perfil">
+        <h2>Mi perfil</h2>
+        <p>Aquí verás la información de tu perfil.</p>
+    </section>
 
     <script>
         // Estrellas parpadeantes
@@ -284,6 +361,56 @@
                 witchRight.remove();
             }, 7000);
         }
+
+        // Menú lateral: abrir/cerrar y navegación a perfil
+        const menuElement = document.getElementById('menu');
+        const menuToggleButton = document.getElementById('menuToggle');
+        const overlayElement = document.getElementById('menuOverlay');
+        const profileLink = document.getElementById('profileLink');
+
+        function openMenu() {
+            menuElement.classList.add('open');
+            menuToggleButton.setAttribute('aria-expanded', 'true');
+            menuElement.setAttribute('aria-hidden', 'false');
+            overlayElement.classList.add('active');
+        }
+
+        function closeMenu() {
+            menuElement.classList.remove('open');
+            menuToggleButton.setAttribute('aria-expanded', 'false');
+            menuElement.setAttribute('aria-hidden', 'true');
+            overlayElement.classList.remove('active');
+        }
+
+        menuToggleButton.addEventListener('click', () => {
+            if (menuElement.classList.contains('open')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+
+        overlayElement.addEventListener('click', closeMenu);
+
+        profileLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = profileLink.getAttribute('href') || '#perfil';
+            closeMenu();
+            setTimeout(() => {
+                if (href.startsWith('#')) {
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        history.replaceState(null, '', href);
+                    }
+                } else {
+                    window.location.assign(href);
+                }
+            }, 250);
+        });
+
+        // Asegurar que el menú inicie cerrado
+        closeMenu();
     </script>
 </body>
 
